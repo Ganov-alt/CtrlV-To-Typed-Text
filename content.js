@@ -2,19 +2,16 @@ let humanTypingEnabled = false;
 let typingAbortController = null;
 let typingInProgress = false;
 
-// Load initial state
 chrome.storage.sync.get(["humanTypingEnabled"], (data) => {
   humanTypingEnabled = !!data.humanTypingEnabled;
 });
 
-// Watch for toggle changes
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.humanTypingEnabled) {
     humanTypingEnabled = changes.humanTypingEnabled.newValue;
   }
 });
 
-// Allow external stop
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "STOP_TYPING") {
     if (typingAbortController) {
@@ -24,46 +21,38 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
-// PASTE INTERCEPTION FIXED
-document.addEventListener(
-  "paste",
-  function (e) {
-    if (!humanTypingEnabled) return;
+document.addEventListener("paste", function (e) {
+  if (!humanTypingEnabled) return;
 
-    const active = document.activeElement;
-    if (
-      active &&
-      (active.tagName === "TEXTAREA" ||
-        active.tagName === "INPUT" ||
-        active.isContentEditable)
-    ) {
-      // BLOCK default paste fully
-      e.preventDefault();
-      e.stopImmediatePropagation();
+  const active = document.activeElement;
+  if (
+    active &&
+    (active.tagName === "TEXTAREA" ||
+      active.tagName === "INPUT" ||
+      active.isContentEditable)
+  ) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
 
-      // Delay to allow browser to pre-paste, then clear it
-      requestAnimationFrame(async () => {
-        clearSelection(active);
+    requestAnimationFrame(async () => {
+      clearSelection(active);
 
-        let clipboardText = "";
-        try {
-          clipboardText = await navigator.clipboard.readText();
-        } catch (err) {
-          if (e.clipboardData) {
-            clipboardText = e.clipboardData.getData("text/plain");
-          }
+      let clipboardText = "";
+      try {
+        clipboardText = await navigator.clipboard.readText();
+      } catch (err) {
+        if (e.clipboardData) {
+          clipboardText = e.clipboardData.getData("text/plain");
         }
+      }
 
-        if (clipboardText) {
-          startTyping(active, clipboardText);
-        }
-      });
-    }
-  },
-  true // ensure we catch paste before others
-);
+      if (clipboardText) {
+        startTyping(active, clipboardText);
+      }
+    });
+  }
+}, true);
 
-// Clear selection or pre-inserted text
 function clearSelection(el) {
   if (el.isContentEditable) {
     const selection = window.getSelection();
@@ -81,35 +70,49 @@ function clearSelection(el) {
   }
 }
 
-// Simulate typing text
 function startTyping(el, text) {
   if (typingInProgress) return;
 
   typingInProgress = true;
-  typingAbortController = new AbortController();
-  const signal = typingAbortController.signal;
 
-  let i = 0;
+  chrome.storage.sync.get(
+    ["useRandomDelay", "fixedDelay", "minDelay", "maxDelay"],
+    (settings) => {
+      typingAbortController = new AbortController();
+      const signal = typingAbortController.signal;
 
-  function typeNext() {
-    if (signal.aborted || !humanTypingEnabled) {
-      typingInProgress = false;
-      return;
+      const useRandom = !!settings.useRandomDelay;
+      const fixed = settings.fixedDelay ?? 50;
+      const min = settings.minDelay ?? 30;
+      const max = settings.maxDelay ?? 100;
+
+      let i = 0;
+
+      function typeNext() {
+        if (signal.aborted || !humanTypingEnabled) {
+          typingInProgress = false;
+          return;
+        }
+
+        if (i < text.length) {
+          insertChar(el, text[i]);
+          i++;
+
+          const delay = useRandom
+            ? Math.floor(Math.random() * (max - min + 1)) + min
+            : fixed;
+
+          setTimeout(typeNext, delay);
+        } else {
+          typingInProgress = false;
+        }
+      }
+
+      typeNext();
     }
-
-    if (i < text.length) {
-      insertChar(el, text[i]);
-      i++;
-      setTimeout(typeNext, 30 + Math.random() * 100);
-    } else {
-      typingInProgress = false;
-    }
-  }
-
-  typeNext();
+  );
 }
 
-// Insert single character
 function insertChar(el, char) {
   if (el.isContentEditable) {
     document.execCommand("insertText", false, char);

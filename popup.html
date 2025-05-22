@@ -3,17 +3,40 @@
 <head>
   <title>Human Typer</title>
   <style>
-    body { font-family: sans-serif; padding: 10px; }
-    label { display: flex; align-items: center; gap: 8px; }
+    body { font-family: sans-serif; padding: 10px; width: 250px; }
+    label { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    input[type="range"] { width: 100%; }
+    .section { margin-top: 10px; }
   </style>
 </head>
 <body>
   <label>
     <input type="checkbox" id="enableHumanTyping" />
-    Enable Human Writing
+    Enable Human Typing
   </label>
+
+  <div class="section">
+    <label>
+      <input type="checkbox" id="useRandomDelay" />
+      Use Random Delay
+    </label>
+
+    <div id="fixedDelayControls">
+      <label>Fixed Delay: <span id="fixedDelayValue">50</span> ms</label>
+      <input type="range" id="fixedDelay" min="10" max="300" value="50" />
+    </div>
+
+    <div id="randomDelayControls" style="display: none;">
+      <label>Min Delay: <span id="minDelayValue">30</span> ms</label>
+      <input type="range" id="minDelay" min="5" max="300" value="30" />
+      <label>Max Delay: <span id="maxDelayValue">100</span> ms</label>
+      <input type="range" id="maxDelay" min="5" max="500" value="100" />
+    </div>
+  </div>
+
   <br />
   <button id="stopTypingBtn">Stop Typing</button>
+
   <script src="popup.js"></script>
 </body>
 </html>

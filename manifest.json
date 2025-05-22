@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Human Typer",
-  "version": "1.0",
-  "description": "Intercepts paste and simulates human typing",
+  "version": "1.1",
+  "description": "Intercepts paste and simulates human typing.",
   "permissions": ["storage", "clipboardRead", "scripting"],
   "action": {
     "default_popup": "popup.html",
