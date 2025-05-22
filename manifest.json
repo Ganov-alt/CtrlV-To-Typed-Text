@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Human Typer",
+  "version": "1.0",
+  "description": "Intercepts paste and simulates human typing",
+  "permissions": ["storage", "clipboardRead", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
